@@ -1,1 +1,1 @@
-Use your own credentials in src/firebase/config.ts
+Use your own credentials in src/firebase/config.ts.
