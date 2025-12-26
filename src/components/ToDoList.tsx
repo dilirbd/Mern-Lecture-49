@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { Task } from './Types';
 import db from '../firebase/config';
 import { ref, push, onValue, remove, update } from 'firebase/database';
@@ -18,7 +18,6 @@ function TodoList() {
 
             if (data) {
                 const taskArray: Task[] = Object.keys(data).map((key) => {
-                    console.log(key);
                     return {
                         userId: key,
                         writtenAt: data[key].addedOn,
@@ -105,7 +104,6 @@ function TodoList() {
     const outsidePopoverClickHandler = (id: number, isOpen: boolean, text: string) => {
 
         if (isOpen) {
-            console.log('open');
             setPopoverOpenID(id);
             setTaskUnderUpdate(text);
         }
@@ -120,11 +118,17 @@ function TodoList() {
         <div className="max-w-md mx-auto mt-10 p-4 bg-gray-600 rounded-lg shadow-lg">
             <h1 className="text-2xl font-bold mb-4">Todo List</h1>
             <div className="flex mb-1 pb-4 border-b-[1.5px]">
-                <input
-                    type="text"
-                    className="flex-1 p-2 border rounded text-gray-100 outline-0"
+                <textarea
+                    rows={1}
+                    className="flex-1 p-2 border rounded text-gray-100 outline-0 min-h-10.25 wrap-break-word resize-y"
                     value={newTask}
                     onChange={(e) => setNewTask(e.target.value)}
+                    onKeyDown={(e: React.KeyboardEvent) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            addTask();
+                        }
+                    }}
                     placeholder="Add a new task..."
                 />
                 <button
@@ -141,7 +145,7 @@ function TodoList() {
                             className={`flex-1 px-1.5 border-l border-r w-[60%] overflow-hidden wrap-break-word ${task.completed ? 'line-through decoration-amber-300 text-gray-400' : ''}`}
                             onClick={() => toggleTaskCompletion(task.userId, task.completed)}
                         >
-                            {task.text}
+                            {task.text.slice(0, (task.text.length > 63) ? 63 : task.text.length)}
                         </span>
                         <Popover modal={true} open={popoverOpenID === index} onOpenChange={(isOpen) => outsidePopoverClickHandler(index, isOpen, task.text)}>
                             <PopoverTrigger>
@@ -155,18 +159,18 @@ function TodoList() {
                             <PopoverAnchor>
                                 <div className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-0 w-0'></div>
                             </PopoverAnchor>
-                            <PopoverContent side='left' onOpenAutoFocus={() => {
+                            <PopoverContent onOpenAutoFocus={() => {
                                 if (popoverInputRef.current) {
                                     popoverInputRef.current.style.height = 'auto';
                                     popoverInputRef.current.style.height = (popoverInputRef.current.scrollHeight + 1) + 'px';
-                                    popoverInputRef.current.focus();
+                                    setTimeout(() => { popoverInputRef.current?.focus(); popoverInputRef.current?.select(); }, 50);
                                 }
-                            }} sideOffset={-16.5} align='center' avoidCollisions={false} className='w-93.25 bg-gray-300/95 dark:bg-gray-800/90 z-100 backdrop-blur-lg shadow-2xl shadow-black/80 border border-white/80  dark:border-gray-500/60 ring-1 ring-black/10 flex flex-row justify-between items-center'>
+                            }} side='left' sideOffset={-16.5} align='center' avoidCollisions={false} className='w-93.25 bg-gray-300/95 dark:bg-gray-800/90 z-100 backdrop-blur-lg shadow-2xl shadow-black/80 border border-white/80  dark:border-gray-500/60 ring-1 ring-black/10 flex flex-row justify-between items-center'>
                                 <textarea
                                     ref={(reference) => {
                                         if (popoverOpenID === index) popoverInputRef.current = reference;
                                     }}
-                                    className="flex-1 px-1.5 py-1 border rounded text-gray-100 outline-0 w-full text-center wrap-break-word resize-none" rows={1}
+                                    className="flex-1 px-1.5 py-1 border-l border-r rounded text-gray-100 outline-0 w-full text-center wrap-break-word resize-none" rows={1}
                                     value={taskUnderUpdate}
 
                                     onInput={(e) => {
@@ -175,6 +179,12 @@ function TodoList() {
                                     }}
                                     onChange={(e) => {
                                         popoverTyping(e.target.value);
+                                    }}
+                                    onKeyDown={(e: React.KeyboardEvent) => {
+                                        if (e.key === 'Enter' && !e.shiftKey) {
+                                            e.preventDefault();
+                                            completeUpdate(task.userId, popoverInputRef.current?.value);
+                                        }
                                     }}
                                 />
                                 <button
@@ -189,6 +199,7 @@ function TodoList() {
                             onClick={() => deleteTask(task.userId)}
                             className="ml-4 p-1 w-15 bg-red-400 text-white rounded hover:bg-red-600"
                         >
+                            {/* A confirm button needs to be added some day */}
                             Delete
                         </button>
                     </li>
