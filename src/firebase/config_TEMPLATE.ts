@@ -5,6 +5,7 @@
 import { type FirebaseApp, initializeApp } from "firebase/app";
 import { getDatabase } from "firebase/database";
 
+// put your own credentials here
 const firebaseConfig = {
     apiKey: "",
     authDomain: "",
